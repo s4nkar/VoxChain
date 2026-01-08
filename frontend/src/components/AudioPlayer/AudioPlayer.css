@@ -1,0 +1,71 @@
+.audio-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.play-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #ffffff;
+    color: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.play-btn:hover {
+    transform: scale(1.1);
+    background: var(--color-accent);
+}
+
+.audio-waveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    flex: 1;
+}
+
+.waveform-bar {
+    width: 3px;
+    background: var(--color-text-secondary);
+    border-radius: 2px;
+    animation: pulse-height 1.2s infinite ease-in-out;
+}
+
+.waveform-user .waveform-bar {
+    background: var(--color-accent);
+}
+
+.waveform-bot .waveform-bar {
+    background: var(--color-primary);
+}
+
+@keyframes pulse-height {
+
+    0%,
+    100% {
+        transform: scaleY(0.5);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+.audio-duration {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
