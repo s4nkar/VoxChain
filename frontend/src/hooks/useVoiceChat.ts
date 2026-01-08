@@ -138,7 +138,8 @@ export const useVoiceChat = () => {
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
 
                 // Show user message immediately
                 addUserMessage(audioBlob);

@@ -9,6 +9,7 @@ export interface Message {
 
 export interface AudioPlayerProps {
     sender: 'user' | 'bot';
+    audioUrl?: string;
     duration?: string;
 }
 

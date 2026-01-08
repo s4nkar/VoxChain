@@ -8,7 +8,7 @@ export function MessageItem({ message }: MessageItemProps) {
             className={`message-row ${message.sender === 'user' ? 'message-user' : 'message-bot'}`}
         >
             <div className={`message-bubble glass-panel ${message.sender === 'user' ? 'user-bubble' : 'bot-bubble'}`}>
-                <AudioPlayer sender={message.sender} />
+                <AudioPlayer sender={message.sender} audioUrl={message.audioUrl} />
 
                 {/* Transcript */}
                 <div className="transcript">
