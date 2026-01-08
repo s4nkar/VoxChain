@@ -1,76 +1,64 @@
-import os
 import torch
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from transformers import AutoTokenizer, BitsAndBytesConfig, StoppingCriteria, StoppingCriteriaList
+from transformers import AutoTokenizer
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 # Model ID
-model_id = "mistralai/Mistral-7B-Instruct-v0.3"
+# model_id = "mistralai/Mistral-7B-Instruct-v0.3"
+model_id = "Qwen/Qwen2.5-1.5B-Instruct"
 
-# Tokenizer
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+# LLM Chain
+llm_chain = None 
 
-# Quantization config
-quantization_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_compute_dtype=torch.bfloat16,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_use_double_quant=True,
-)
+# Function to build LLM Chain (Lazy Loading, Avoid building on Start)
+def build_llm_chain():
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-# StopOnEos class
-class StopOnEos(StoppingCriteria):
-    def __call__(self, input_ids, scores, **kwargs):
-        return input_ids[0][-1] == tokenizer.eos_token_id
+    llm = HuggingFacePipeline.from_model_id(
+        model_id=model_id,
+        task="text-generation",
+        pipeline_kwargs={
+            "max_new_tokens": 120,
+            "temperature": 0.4,
+            "return_full_text": False,
+            "pad_token_id": tokenizer.eos_token_id,
+        },
+        model_kwargs={
+            "device_map": "auto",
+            "torch_dtype": torch.float16,
+        },
+    )
 
-# HuggingFacePipeline
-llm = HuggingFacePipeline.from_model_id(
-    model_id=model_id,
-    task="text-generation",
-    pipeline_kwargs={
-        "max_new_tokens": 200,
-        "temperature": 0.5,
-        "repetition_penalty": 1.2,
-        "do_sample": True,
-        "eos_token_id": tokenizer.eos_token_id,
-        "pad_token_id": tokenizer.eos_token_id,
-        "stopping_criteria": StoppingCriteriaList([StopOnEos()]),
-        "return_full_text": False
-    },
-    model_kwargs={
-        "quantization_config": quantization_config,
-        "device_map": "auto"
-    }
-)
+    prompt = PromptTemplate(
+        input_variables=["question"],
+        template=(
+            "You are VoxChain, a concise voice assistant.\n"
+            "Reply in 1–2 sentences.\n"
+            "User: {question}\n"
+            "VoxChain:"
+        ),
+    )
 
+    return prompt | llm | StrOutputParser()
 
-# A persona for the bot
-prompt_template_name = PromptTemplate(
-    input_variables = ['question'],
-    template="""You are VoxChain, a helpful and concise audio assistant. 
-    Answer the user's question in 1-2 sentences. Keep it conversational.
-    User: {question}
-    VoxChain:
-    """
-)
-
-# Function to normalize the name
-def normalize_name(text: str) -> str:
-    return text.strip().strip('"')
-
-# Create the LLM chain
-llm_chain = prompt_template_name | llm | StrOutputParser() | normalize_name
+# Function to get LLM Chain
+def get_llm_chain():
+    global llm_chain
+    if llm_chain is None:
+        llm_chain = build_llm_chain()
+    return llm_chain
 
 # Function to get Model's response
 def get_model_response(text: str) -> str:
     try:
+        llm_chain = get_llm_chain()
         response = llm_chain.invoke({"question": text})
         return response.strip()
     except Exception as e:
         print(f"LLM Error: {e}")
-        return "I'm having trouble thinking right now."
+        return "Something went wrong. Please try again."
