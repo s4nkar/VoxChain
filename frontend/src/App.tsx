@@ -1,60 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
 import './App.css';
 import type { Message } from './types';
+import { useRef, useEffect } from 'react';
 import { Header } from './components/header/Header';
 import { MessageItem } from './components/MessageItem/MessageItem';
 import { InputArea } from './components/InputArea/InputArea';
+import { useVoiceChat } from './hooks/useVoiceChat';
 
 function App() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'bot',
-      audioUrl: '#',
-      transcript: 'Hello! I am VoxChain. Press the microphone button to start speaking.',
-      timestamp: new Date()
-    }
-  ]);
-
+  const { stopRecording, startRecording, messages, status } = useVoiceChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom when messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Handle toggle record
   const handleToggleRecord = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      // Start recording simulation
-      setTimeout(() => {
-        setIsRecording(false);
-        const newMessage: Message = {
-          id: Date.now().toString(),
-          sender: 'user',
-          audioUrl: '#',
-          transcript: 'This is a simulated user voice message.',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, newMessage]);
-
-        // Simulate bot response
-        setTimeout(() => {
-          const botResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            sender: 'bot',
-            audioUrl: '#',
-            transcript: 'I received your audio. Here is my audio response back to you.',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, botResponse]);
-        }, 1500);
-
-      }, 2000);
+    if (status === 'recording') {
+      stopRecording();
+    } else {
+      startRecording();
     }
   };
 
@@ -65,14 +36,31 @@ function App() {
       {/* Chat Area */}
       <main className="chat-area">
         <div className="messages-wrapper">
+          {/* 3. Render messages from the hook */}
+          {messages.length === 0 && (
+            <div className="empty-state">
+              <p>Start talking to VoxChain...</p>
+            </div>
+          )}
+
           {messages.map((msg) => (
             <MessageItem key={msg.id} message={msg} />
           ))}
+
+          {/* Status Indicator (Optional but helpful) */}
+          {status === 'processing' && (
+            <div className="status-indicator">Thinking...</div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
       </main>
 
-      <InputArea isRecording={isRecording} onToggleRecord={handleToggleRecord} />
+      <InputArea
+        isRecording={status === 'recording'}
+        onToggleRecord={handleToggleRecord}
+        disabled={status === 'processing' || status === 'speaking'}
+      />
     </div>
   );
 }

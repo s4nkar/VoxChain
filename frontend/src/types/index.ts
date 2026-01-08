@@ -15,6 +15,7 @@ export interface AudioPlayerProps {
 export interface InputAreaProps {
     isRecording: boolean;
     onToggleRecord: () => void;
+    disabled: boolean;
 }
 
 export interface MessageItemProps {

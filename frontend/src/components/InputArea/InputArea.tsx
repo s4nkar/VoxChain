@@ -1,7 +1,7 @@
 import './InputArea.css';
 import type { InputAreaProps } from '../../types';
 
-export function InputArea({ isRecording, onToggleRecord }: InputAreaProps) {
+export function InputArea({ isRecording, onToggleRecord, disabled }: InputAreaProps) {
     return (
         <footer className="input-area">
             <div className="input-glass-wrapper glass-panel">
@@ -12,6 +12,7 @@ export function InputArea({ isRecording, onToggleRecord }: InputAreaProps) {
                 <button
                     className={`record-btn ${isRecording ? 'recording' : ''}`}
                     onClick={onToggleRecord}
+                    disabled={disabled}
                 >
                     <div className="mic-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor" height="32" width="32">
