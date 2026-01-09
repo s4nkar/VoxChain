@@ -1,6 +1,6 @@
 import './App.css';
-import type { Message } from './types';
-import { useRef, useEffect } from 'react';
+
+import { useRef, useEffect, useState } from 'react';
 import { Header } from './components/header/Header';
 import { MessageItem } from './components/MessageItem/MessageItem';
 import { InputArea } from './components/InputArea/InputArea';
@@ -9,6 +9,8 @@ import { useVoiceChat } from './hooks/useVoiceChat';
 function App() {
   const { stopRecording, startRecording, messages, status } = useVoiceChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const lastAutoPlayedIdRef = useRef<string | null>(null);
 
   // Scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -20,11 +22,25 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
+  // Auto-play new bot messages
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.sender === 'bot' && lastMsg.audioUrl) {
+      // If this is a new message we haven't auto-played yet
+      if (lastMsg.id !== lastAutoPlayedIdRef.current) {
+        setPlayingMessageId(lastMsg.id);
+        lastAutoPlayedIdRef.current = lastMsg.id;
+      }
+    }
+  }, [messages]);
+
   // Handle toggle record
   const handleToggleRecord = () => {
     if (status === 'recording') {
       stopRecording();
     } else {
+      // Stop any playback before recording
+      setPlayingMessageId(null);
       startRecording();
     }
   };
@@ -44,7 +60,14 @@ function App() {
           )}
 
           {messages.map((msg) => (
-            <MessageItem key={msg.id} message={msg} />
+            <MessageItem
+              key={msg.id}
+              message={msg}
+              isPlaying={playingMessageId === msg.id}
+              onPlay={() => setPlayingMessageId(msg.id)}
+              onPause={() => setPlayingMessageId(null)}
+              onEnded={() => setPlayingMessageId(null)}
+            />
           ))}
 
           {/* Status Indicator (Optional but helpful) */}
@@ -59,7 +82,7 @@ function App() {
       <InputArea
         isRecording={status === 'recording'}
         onToggleRecord={handleToggleRecord}
-        disabled={status === 'processing' || status === 'speaking'}
+        disabled={status === 'processing'}
       />
     </div>
   );

@@ -55,11 +55,6 @@ export const useVoiceChat = () => {
     const updateBotAudio = (audioBlob: Blob) => {
         const audioUrl = URL.createObjectURL(audioBlob);
 
-        // Auto-play the response
-        const audio = new Audio(audioUrl);
-        audio.play().catch(e => console.error("Auto-play blocked:", e));
-        audio.onended = () => setStatus('idle');
-
         setMessages(prev => {
             const newArr = [...prev];
             // Find last bot message
@@ -71,6 +66,9 @@ export const useVoiceChat = () => {
             }
             return newArr;
         });
+
+        // We no longer set status to 'speaking' here, letting the UI handle playback state
+        setStatus('idle');
     };
 
     // WebSocket Logic
@@ -95,7 +93,6 @@ export const useVoiceChat = () => {
         ws.onmessage = async (event) => {
             // Bot Audio
             if (event.data instanceof Blob) {
-                setStatus('speaking');
                 updateBotAudio(event.data);
             }
             // JSON Control Messages
@@ -106,7 +103,8 @@ export const useVoiceChat = () => {
                         updateUserTranscript(data.payload);
                     } else if (data.type === 'text_response') {
                         addBotMessage(data.payload);
-                        setStatus('speaking');
+                        // setStatus('speaking'); // Removed to avoid locking UI
+                        setStatus('idle');
                     }
                 } catch (e) {
                     console.error('JSON Error', e);
@@ -118,9 +116,25 @@ export const useVoiceChat = () => {
     }, []);
 
     useEffect(() => {
+        let timeout: ReturnType<typeof setTimeout>;
+        if (status === 'processing') {
+            timeout = setTimeout(() => {
+                setStatus('idle');
+                alert("Server request timed out. Please try again.");
+            }, 30000); // 30s timeout
+        }
+        return () => clearTimeout(timeout);
+    }, [status]);
+
+    useEffect(() => {
         connect();
         return () => {
-            socketRef.current?.close();
+            isConnecting.current = false; // Reset connection flag
+            if (socketRef.current) {
+                socketRef.current.onclose = null; // Prevent auto-reconnect logic
+                socketRef.current.close();
+                socketRef.current = null;
+            }
         };
     }, [connect]);
 
@@ -148,6 +162,10 @@ export const useVoiceChat = () => {
                 if (socketRef.current?.readyState === WebSocket.OPEN) {
                     setStatus('processing');
                     socketRef.current.send(audioBlob);
+                } else {
+                    console.error("Socket not connected");
+                    alert("Connection to server lost. Please try again.");
+                    setStatus('idle');
                 }
             };
 
