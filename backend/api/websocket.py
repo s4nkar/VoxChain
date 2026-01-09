@@ -1,6 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from services import llm_chain, transcriber, synthesizer
-import json
 
 router = APIRouter()
 
@@ -11,8 +10,12 @@ async def audio_websocket(websocket: WebSocket):
 
     try:
         while True:
-            # 1. Receive data from Frontend
-            data = await websocket.receive()
+            # Receive data from Frontend
+            try:
+                data = await websocket.receive()
+            except RuntimeError:
+                print("Client disconnected abruptly.")
+                break
 
             if "bytes" in data:
                 audio_bytes = data["bytes"]
@@ -20,6 +23,10 @@ async def audio_websocket(websocket: WebSocket):
                 # Transcribe audio to text
                 user_text = transcriber.transcribe_audio(audio_bytes)
                 print(f"User audio: {user_text}")
+                
+                if not user_text:
+                    continue
+
                 
                 # Send transcription back to UI
                 await websocket.send_json({"type": "transcription", "payload": user_text})
