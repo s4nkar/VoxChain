@@ -11,6 +11,10 @@ export interface AudioPlayerProps {
     sender: 'user' | 'bot';
     audioUrl?: string;
     duration?: string;
+    isPlaying?: boolean;
+    onPlay?: () => void;
+    onPause?: () => void;
+    onEnded?: () => void;
 }
 
 export interface InputAreaProps {
@@ -21,4 +25,8 @@ export interface InputAreaProps {
 
 export interface MessageItemProps {
     message: Message;
+    isPlaying?: boolean;
+    onPlay?: () => void;
+    onPause?: () => void;
+    onEnded?: () => void;
 }
