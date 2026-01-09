@@ -2,11 +2,26 @@ import { useState, useRef, useEffect } from 'react';
 import type { AudioPlayerProps } from '../../types';
 import './AudioPlayer.css';
 
-export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: externalIsPlaying, onPlay, onPause, onEnded }: AudioPlayerProps) {
+export function AudioPlayer({ sender, audioUrl, duration: initialDuration = "0:00", isPlaying: externalIsPlaying, onPlay, onPause, onEnded }: AudioPlayerProps) {
     const [internalIsPlaying, setInternalIsPlaying] = useState(false);
+    const [currentDuration, setCurrentDuration] = useState(initialDuration);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalIsPlaying;
+
+    const formatTime = (time: number) => {
+        if (isNaN(time)) return "0:00";
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+            const duration = audioRef.current.duration;
+            setCurrentDuration(formatTime(duration));
+        }
+    };
 
     const togglePlay = () => {
         if (!audioRef.current || !audioUrl) return;
@@ -54,6 +69,7 @@ export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: ex
             <audio
                 ref={audioRef}
                 src={audioUrl}
+                onLoadedMetadata={handleLoadedMetadata}
                 onEnded={handleEnded}
                 onPause={() => {
                     if (externalIsPlaying === undefined) setInternalIsPlaying(false);
@@ -90,7 +106,7 @@ export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: ex
                     ></div>
                 ))}
             </div>
-            <span className="audio-duration">{duration}</span>
+            <span className="audio-duration">{currentDuration}</span>
         </div>
     );
 }
