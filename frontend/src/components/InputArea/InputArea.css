@@ -58,8 +58,24 @@
     box-shadow: 0 6px 20px rgba(255, 0, 204, 0.4);
 }
 
+
 .record-btn:active {
     transform: scale(0.95);
+}
+
+.record-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-text-secondary);
+    /* or a gray color */
+    transform: none;
+    box-shadow: none;
+}
+
+.record-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 .record-btn.recording {

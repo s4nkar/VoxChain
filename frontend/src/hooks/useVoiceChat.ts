@@ -67,7 +67,6 @@ export const useVoiceChat = () => {
             return newArr;
         });
 
-        // We no longer set status to 'speaking' here, letting the UI handle playback state
         setStatus('idle');
     };
 
@@ -87,7 +86,7 @@ export const useVoiceChat = () => {
 
         ws.onclose = () => {
             isConnecting.current = false;
-            setTimeout(() => connect(), 3000); // Auto-reconnect
+            setTimeout(() => connect(), 3000);
         };
 
         ws.onmessage = async (event) => {
@@ -103,8 +102,6 @@ export const useVoiceChat = () => {
                         updateUserTranscript(data.payload);
                     } else if (data.type === 'text_response') {
                         addBotMessage(data.payload);
-                        // setStatus('speaking'); // Removed to avoid locking UI
-                        setStatus('idle');
                     }
                 } catch (e) {
                     console.error('JSON Error', e);
@@ -121,7 +118,7 @@ export const useVoiceChat = () => {
             timeout = setTimeout(() => {
                 setStatus('idle');
                 alert("Server request timed out. Please try again.");
-            }, 30000); // 30s timeout
+            }, 30000);
         }
         return () => clearTimeout(timeout);
     }, [status]);
@@ -129,9 +126,9 @@ export const useVoiceChat = () => {
     useEffect(() => {
         connect();
         return () => {
-            isConnecting.current = false; // Reset connection flag
+            isConnecting.current = false;
             if (socketRef.current) {
-                socketRef.current.onclose = null; // Prevent auto-reconnect logic
+                socketRef.current.onclose = null;
                 socketRef.current.close();
                 socketRef.current = null;
             }

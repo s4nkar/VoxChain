@@ -6,7 +6,6 @@ export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: ex
     const [internalIsPlaying, setInternalIsPlaying] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Use external state if provided, otherwise internal
     const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalIsPlaying;
 
     const togglePlay = () => {
@@ -17,8 +16,6 @@ export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: ex
             onPause?.();
             setInternalIsPlaying(false);
         } else {
-            // calculated play happens in useEffect or manually here?
-            // Better to just call the callback and let parent update prop, OR play directly if uncontrolled.
             if (externalIsPlaying !== undefined) {
                 onPlay?.();
             } else {
@@ -33,13 +30,12 @@ export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: ex
         onEnded?.();
     };
 
-    // Sync play state with prop
     useEffect(() => {
         if (externalIsPlaying !== undefined && audioRef.current) {
             if (externalIsPlaying) {
                 audioRef.current.play().catch(e => {
                     console.error("Audio playback failed:", e);
-                    onPause?.(); // Fallback if blocked
+                    onPause?.();
                 });
             } else {
                 audioRef.current.pause();
@@ -59,7 +55,6 @@ export function AudioPlayer({ sender, audioUrl, duration = "0:05", isPlaying: ex
                 ref={audioRef}
                 src={audioUrl}
                 onEnded={handleEnded}
-                // We handle state via props or togglePlay, but let's listen to native events too for safety
                 onPause={() => {
                     if (externalIsPlaying === undefined) setInternalIsPlaying(false);
                 }}
