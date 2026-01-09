@@ -1,5 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from services import llm_chain, transcriber, synthesizer
+import re
 
 router = APIRouter()
 
@@ -33,6 +34,12 @@ async def audio_websocket(websocket: WebSocket):
 
                 # Get Langchain response
                 response = llm_chain.get_model_response(user_text)
+                
+                # Truncate incomplete last sentence if present
+                match = re.search(r'[.!?](?=[^.!?]*$)', response)
+                if match:
+                    response = response[:match.end()]
+                    
                 print(f"Model response: {response}")
                 
                 # Send text response back to UI
